@@ -1,29 +1,15 @@
 # app.py
-# Cloud Security Detection & Forensics Tool - Port 5000
-# UNIFIED: Includes all background monitoring from main.py.
-# Run ONLY this file — no need for main.py.
-#
-# Detects: Ransomware | Brute Force | Unauthorized Access
-# Auto-responds: blocks attackers, quarantines files, generates PDFs
-
-import threading
-import time
-import sqlite3
-from datetime import datetime
+# Security Monitoring Tool - Port 5000
+# Monitors Company Cloud Portal (port 8080)
+# Has its own login, dashboard, admin, evidence pages
 
 from flask import (
     Flask, render_template, request,
     redirect, url_for, session, jsonify
 )
-
+import sqlite3
 import config
-from file_monitor import start_monitoring, connect_to_cloud
-from detection_engine import analyze_threat
-from response_module import execute_response
-from forensic_engine import generate_forensic_report
-from report_generator import create_pdf_report
-from security_logger import initialize_security_tables
-from auth_monitor import analyze_auth_threats
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "security_tool_secret_2026"
@@ -36,223 +22,6 @@ SECURITY_ADMINS = {
     "secadmin": "SecAdmin123",
     "analyst": "Analyst2026"
 }
-
-
-# ═══════════════════════════════════════════════════════════════
-# DATABASE INITIALIZATION
-# ═══════════════════════════════════════════════════════════════
-
-def initialize_database():
-    """Create ALL required database tables"""
-    conn = sqlite3.connect(config.DATABASE_NAME)
-    cursor = conn.cursor()
-
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS file_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT, event_type TEXT,
-            file_name TEXT, details TEXT
-        )
-    ''')
-
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS alerts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT, alert_type TEXT,
-            message TEXT, status TEXT
-        )
-    ''')
-
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS security_events (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT, event_type TEXT, username TEXT,
-            ip_address TEXT, action TEXT, target_resource TEXT,
-            status TEXT, details TEXT
-        )
-    ''')
-
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS login_attempts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ip_address TEXT, username TEXT, password_tried TEXT,
-            timestamp TEXT, success INTEGER DEFAULT 0, user_agent TEXT
-        )
-    ''')
-
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS blocked_ips (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ip_address TEXT UNIQUE, reason TEXT, blocked_at TEXT,
-            attempt_count INTEGER, status TEXT DEFAULT "BLOCKED"
-        )
-    ''')
-
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS evidence_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT, attack_type TEXT, ip_address TEXT,
-            username TEXT, action TEXT, target TEXT,
-            evidence_details TEXT, severity TEXT
-        )
-    ''')
-
-    conn.commit()
-    conn.close()
-
-    # Security tables (blocked_entities, etc.)
-    initialize_security_tables()
-    print("✅ All database tables initialized")
-
-
-# ═══════════════════════════════════════════════════════════════
-# BACKGROUND DETECTION THREADS  (ported from main.py)
-# ═══════════════════════════════════════════════════════════════
-
-_ransomware_responded = False
-_auth_threat_responded = False
-
-
-def ransomware_detection_loop():
-    """
-    Background Thread: Checks for ransomware every 5 seconds.
-    Uses detection_engine.analyze_threat() which reads file_logs.
-    When ransomware confirmed: executes response and generates PDF.
-    """
-    global _ransomware_responded
-    print("✅ Ransomware detection engine started")
-
-    while True:
-        time.sleep(5)
-        result = analyze_threat()
-
-        if result["threat_detected"] and not _ransomware_responded:
-            _ransomware_responded = True
-
-            print("\n🚨 RANSOMWARE CONFIRMED BY DETECTION ENGINE")
-            print(f"   Score   : {result.get('score', 0)}")
-            print(f"   Reasons : {result.get('reasons', [])}")
-
-            # Execute automated response
-            execute_response(result)
-
-            # Generate PDF forensic report
-            forensic_data = generate_forensic_report()
-            if forensic_data:
-                pdf_file = create_pdf_report(forensic_data)
-                print(f"\n📄 PDF Report generated: {pdf_file}")
-
-            # Allow re-detection after 60 seconds
-            time.sleep(60)
-            _ransomware_responded = False
-
-
-def auth_detection_loop():
-    """
-    Background Thread: Checks for brute force and unauthorized
-    access every 5 seconds.
-    """
-    global _auth_threat_responded
-    print("✅ Authentication/Authorization monitor started")
-
-    while True:
-        time.sleep(5)
-        result = analyze_auth_threats()
-
-        if result["threat_detected"] and not _auth_threat_responded:
-            _auth_threat_responded = True
-
-            attack_type = result.get("attack_type", "UNKNOWN")
-            ip = result.get("ip_address", "Unknown")
-            username = result.get("username", "Unknown")
-
-            print(f"\n🚨 AUTH THREAT DETECTED: {attack_type}")
-            print(f"   IP Address : {ip}")
-            print(f"   Username   : {username}")
-            print(f"   Message    : {result.get('message', '')}")
-
-            # Generate forensic report
-            print("\n🔍 Running forensic investigation...")
-            forensic_data = generate_forensic_report()
-            if forensic_data:
-                pdf_file = create_pdf_report(forensic_data)
-                print(f"\n📄 PDF Report generated: {pdf_file}")
-
-            # Allow re-detection after 30 seconds
-            time.sleep(30)
-            _auth_threat_responded = False
-
-
-def _status_printer():
-    """Background Thread: Prints system status every 30 seconds."""
-    while True:
-        time.sleep(30)
-        now = datetime.now().strftime("%H:%M:%S")
-        try:
-            conn = sqlite3.connect(config.DATABASE_NAME)
-            cursor = conn.cursor()
-
-            cursor.execute('SELECT COUNT(*) FROM file_logs')
-            file_count = cursor.fetchone()[0]
-
-            cursor.execute('SELECT COUNT(*) FROM alerts')
-            alert_count = cursor.fetchone()[0]
-
-            try:
-                cursor.execute('SELECT COUNT(*) FROM security_events')
-                sec_count = cursor.fetchone()[0]
-            except Exception:
-                sec_count = 0
-
-            try:
-                cursor.execute('SELECT COUNT(*) FROM blocked_ips')
-                block_count = cursor.fetchone()[0]
-            except Exception:
-                block_count = 0
-
-            conn.close()
-            print(
-                f"\n📊 [{now}] STATUS | "
-                f"File Events: {file_count} | "
-                f"Alerts: {alert_count} | "
-                f"Security Events: {sec_count} | "
-                f"Blocked: {block_count}"
-            )
-        except Exception:
-            pass
-
-
-def start_background_monitors():
-    """
-    Start all background monitoring threads.
-    Called once at startup before Flask begins serving requests.
-    """
-    # Thread 1: File Monitor (watches MinIO files every 3 seconds)
-    threading.Thread(
-        target=start_monitoring, daemon=True, name="FileMonitor"
-    ).start()
-    time.sleep(1)
-
-    # Thread 2: Ransomware Detection (scores file_logs every 5 seconds)
-    threading.Thread(
-        target=ransomware_detection_loop,
-        daemon=True, name="RansomwareDetector"
-    ).start()
-    time.sleep(1)
-
-    # Thread 3: Auth / Brute Force Detection (every 5 seconds)
-    threading.Thread(
-        target=auth_detection_loop,
-        daemon=True, name="AuthMonitor"
-    ).start()
-    time.sleep(1)
-
-    # Thread 4: Status Printer (every 30 seconds)
-    threading.Thread(
-        target=_status_printer, daemon=True, name="StatusPrinter"
-    ).start()
-
-    print("✅ All background monitoring threads started")
 
 
 # ─────────────────────────────────────────
@@ -268,6 +37,97 @@ def get_real_ip():
     else:
         ip = request.remote_addr
     return ip.strip()
+
+
+def init_security_db():
+    """
+    Initialize all required database tables.
+    These tables are SHARED with cloud_portal.py
+    Both systems read and write to same database.
+    """
+    conn = sqlite3.connect(config.DATABASE_NAME)
+    cursor = conn.cursor()
+
+    # Security events table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS security_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            event_type TEXT,
+            username TEXT,
+            ip_address TEXT,
+            action TEXT,
+            target_resource TEXT,
+            status TEXT,
+            details TEXT
+        )
+    ''')
+
+    # Login attempts table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS login_attempts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ip_address TEXT,
+            username TEXT,
+            password_tried TEXT,
+            timestamp TEXT,
+            success INTEGER DEFAULT 0,
+            user_agent TEXT
+        )
+    ''')
+
+    # Alerts table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            alert_type TEXT,
+            message TEXT,
+            status TEXT
+        )
+    ''')
+
+    # Blocked IPs table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS blocked_ips (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ip_address TEXT UNIQUE,
+            reason TEXT,
+            blocked_at TEXT,
+            attempt_count INTEGER,
+            status TEXT DEFAULT "BLOCKED"
+        )
+    ''')
+
+    # Evidence logs table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS evidence_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            attack_type TEXT,
+            ip_address TEXT,
+            username TEXT,
+            action TEXT,
+            target TEXT,
+            evidence_details TEXT,
+            severity TEXT
+        )
+    ''')
+
+    # File activity logs table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS file_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            event_type TEXT,
+            file_name TEXT,
+            details TEXT
+        )
+    ''')
+
+    conn.commit()
+    conn.close()
+    print("✅ All database tables initialized")
 
 
 def get_db_stats():
@@ -578,7 +438,6 @@ def security_dashboard():
         'dashboard.html',
         stats=stats,
         current_user=session.get('sec_admin'),
-        current_ip=get_real_ip(),
         login_time=session.get('sec_login_time', 'Unknown')
     )
 
@@ -691,6 +550,9 @@ def generate_report():
         return redirect(url_for('sec_login'))
 
     try:
+        from forensic_engine import generate_forensic_report
+        from report_generator import create_pdf_report
+
         print("\n🔍 Generating forensic PDF report...")
         forensic_data = generate_forensic_report()
 
@@ -866,87 +728,63 @@ def api_evidence():
 
 
 # ═══════════════════════════════════════════
-# ROUTE 9: FORENSICS PAGE
-# ═══════════════════════════════════════════
-
-@app.route('/forensics')
-def forensics_page():
-    """Forensics investigation page."""
-    if 'sec_admin' not in session:
-        return redirect(url_for('sec_login'))
-
-    stats = get_db_stats()
-
-    return render_template(
-        'forensics.html',
-        stats=stats,
-        current_user=session.get('sec_admin')
-    )
-
-
-# ═══════════════════════════════════════════
 # START APPLICATION
 # ═══════════════════════════════════════════
 
 if __name__ == '__main__':
 
+    # Initialize database
+    init_security_db()
+
     print("\n" + "=" * 65)
-    print("  🛡️  CLOUD SECURITY DETECTION & FORENSICS TOOL  🛡️")
-    print("  Version 5.0 - Unified Single-File System")
-    print("  Detects: Ransomware | Brute Force | Unauthorized Access")
-    print("=" * 65 + "\n")
-
-    # Step 1: Initialize all database tables
-    initialize_database()
-
-    # Step 2: Verify MinIO cloud connection
-    try:
-        client = connect_to_cloud()
-        buckets = client.list_buckets()
-        print(f"✅ Cloud connection successful")
-        print(f"✅ Found {len(buckets)} buckets in MinIO")
-    except Exception as e:
-        print(f"\n❌ Cannot connect to MinIO cloud: {e}")
-        print("Please make sure Docker and MinIO are running!")
-        print("Run: docker start minio-cloud")
-        raise SystemExit(1)
-
-    print("\n" + "-" * 65)
-    print("📋 SYSTEM INFORMATION:")
-    print(f"   🌐 Security Dashboard : http://localhost:5000")
-    print(f"   ☁️  MinIO Console      : http://localhost:9001")
-    print(f"   🔍 Detection Interval : Every 5 seconds")
-    print(f"   📁 Reports saved      : ./reports/ folder")
-    print(f"   💾 Database           : {config.DATABASE_NAME}")
-    print("-" * 65)
+    print("  🛡️  CLOUD SECURITY MONITORING & FORENSICS TOOL")
+    print("  Version 4.0 - Full Attack Detection System")
+    print("  Port 5000 - Monitors Cloud Portal on Port 8080")
+    print("=" * 65)
 
     print("\n📋 SECURITY TOOL LOGIN:")
     print("   Username: secadmin  Password: SecAdmin123")
     print("   Username: analyst   Password: Analyst2026")
 
-    print("\n📋 PAGES:")
+    print("\n📋 PAGES IN SECURITY TOOL:")
     print("   http://localhost:5000/login     ← Security tool login")
     print("   http://localhost:5000/dashboard ← Live monitoring")
     print("   http://localhost:5000/evidence  ← Forensic evidence")
     print("   http://localhost:5000/admin     ← Manage blocked IPs")
-    print("   http://localhost:5000/forensics ← Forensics page")
 
-    print("\n📋 WHAT IS BEING MONITORED:")
-    print("   ✅ Attack 1: Brute Force Password Attacks")
-    print("   ✅ Attack 2: Ransomware File Encryption")
-    print("   ✅ Attack 3: Unauthorized Cloud Access")
+    print("\n📋 COMPANY CLOUD PORTAL (TARGET):")
+    print("   http://localhost:8080           ← Cloud portal")
+    print("   Login: john.doe / Pass123")
+    print("   Login: admin / Admin123")
 
-    print("\n   Press CTRL+C to stop the system\n")
-    print("=" * 65 + "\n")
+    print("\n📋 HOW TO DEMO ALL 3 ATTACKS:")
+    print("\n   ATTACK 1 - BRUTE FORCE:")
+    print("   → Phone opens http://192.168.110.11:8080/login")
+    print("   → Try wrong password 5 times")
+    print("   → Phone gets BLOCKED")
+    print("   → Security tool dashboard shows attack")
 
-    # Step 3: Start all background monitoring threads
-    start_background_monitors()
+    print("\n   ATTACK 2 - RANSOMWARE:")
+    print("   → Login to cloud portal: localhost:8080")
+    print("   → Go to Files page")
+    print("   → Click Encrypt button on any file")
+    print("   → File becomes .locked")
+    print("   → Encrypt 3 files → IP gets blocked")
+    print("   → Security tool shows ransomware evidence")
 
-    # Step 4: Start Flask dashboard (blocks here — runs in main thread)
-    print("🌐 Starting security dashboard on port 5000...")
+    print("\n   ATTACK 3 - UNAUTHORIZED:")
+    print("   → Without login open: localhost:8080/database")
+    print("   → Try 3 times → IP blocked")
+    print("   → Security tool shows unauthorized access")
+
+    print("\n   UNBLOCK IP:")
+    print("   → Security tool → Admin panel")
+    print("   → Click Unblock IP button")
+
+    print("\n   Press CTRL+C to stop\n")
+
     app.run(
         host='0.0.0.0',
         port=5000,
-        debug=False,
-        use_reloader=False
+        debug=False
     )
