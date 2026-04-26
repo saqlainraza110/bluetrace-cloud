@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>File Storage - SecureCloud Enterprise</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f0f2f5;
+    color: #333;
+}
+
+.navbar {
+    background: #1a237e;
+    padding: 0 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 60px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.navbar-brand {
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.navbar-right a {
+    color: rgba(255,255,255,0.85);
+    text-decoration: none;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+
+.navbar-right a:hover {
+    background: rgba(255,255,255,0.15);
+    color: white;
+}
+
+.user-chip {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+}
+
+.content { padding: 25px; }
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.page-title { font-size: 20px; font-weight: bold; color: #1a237e; }
+.page-subtitle { font-size: 12px; color: #888; margin-top: 3px; }
+
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 20px;
+}
+
+.upload-zone {
+    border: 2px dashed #c5cae9;
+    border-radius: 10px;
+    padding: 20px 25px;
+    margin-bottom: 25px;
+    background: #f8f9ff;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.upload-zone-icon { font-size: 28px; }
+
+.upload-zone form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex: 1;
+}
+
+.upload-zone input[type="file"] {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 13px;
+    background: white;
+}
+
+.btn-upload {
+    background: #1a237e;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-upload:hover { background: #283593; }
+
+.section-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.file-count {
+    background: #e8eaf6;
+    color: #3949ab;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+th {
+    background: #f8f9fa;
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 12px;
+    color: #666;
+    font-weight: 600;
+    border-bottom: 2px solid #eee;
+}
+
+td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f5f5f5;
+    vertical-align: middle;
+}
+
+tr:hover td { background: #fafafa; }
+
+.file-icon { font-size: 20px; }
+
+.file-name-normal {
+    color: #333;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.file-name-normal:hover { color: #1a237e; }
+
+.file-name-locked {
+    color: #c62828;
+    font-weight: bold;
+}
+
+.locked-badge {
+    display: inline-block;
+    background: #ffebee;
+    color: #c62828;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    margin-left: 6px;
+    border: 1px solid #ef9a9a;
+}
+
+.quarantine-badge {
+    display: inline-block;
+    background: #fff3e0;
+    color: #e65100;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    margin-left: 6px;
+    border: 1px solid #ffcc02;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    white-space: nowrap;
+}
+
+.btn-rename {
+    background: #e3f2fd;
+    color: #1565c0;
+    border: 1px solid #90caf9;
+}
+
+.btn-rename:hover { background: #bbdefb; }
+
+.btn-delete {
+    background: #ffebee;
+    color: #c62828;
+    border: 1px solid #ef9a9a;
+}
+
+.btn-delete:hover { background: #ffcdd2; }
+
+.no-files {
+    text-align: center;
+    padding: 50px;
+    color: #bbb;
+}
+
+.stats-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-mini {
+    background: white;
+    border-radius: 10px;
+    padding: 15px 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    text-align: center;
+    flex: 1;
+}
+
+.stat-mini .num { font-size: 22px; font-weight: bold; color: #1a237e; }
+.stat-mini .lbl { font-size: 11px; color: #888; margin-top: 3px; }
+.stat-mini.danger .num { color: #c62828; }
+
+/* Rename modal */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-overlay.active { display: flex; }
+
+.modal {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    width: 450px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.modal h3 {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.modal input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.modal input:focus {
+    outline: none;
+    border-color: #1a237e;
+}
+
+.modal-btns {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.modal-cancel {
+    padding: 9px 18px;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.modal-save {
+    padding: 9px 18px;
+    background: #1a237e;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.modal-save:hover { background: #283593; }
+
+.warning-note {
+    background: #e3f2fd;
+    border-left: 4px solid #1976d2;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 12px;
+    color: #1565c0;
+    line-height: 1.7;
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+    <div class="navbar-brand">☁️ SecureCloud Enterprise</div>
+    <div class="navbar-right">
+        <a href="/dashboard">🏠 Home</a>
+        <a href="/files">📁 Files</a>
+        <a href="/database">🗄️ Database</a>
+        <div class="user-chip">👤 {{ current_user }} | {{ current_role }}</div>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+
+<!-- RENAME MODAL -->
+<div class="modal-overlay" id="renameModal">
+    <div class="modal">
+        <h3>✏️ Rename File</h3>
+        <p style="font-size:12px; color:#888; margin-bottom:15px">
+            Current name: <strong id="currentNameDisplay"></strong>
+        </p>
+        <form method="POST" action="/rename">
+            <input type="hidden" name="old_name" id="oldNameInput">
+            <input type="text" name="new_name" id="newNameInput"
+                   placeholder="Enter new file name" required>
+            <p style="font-size:11px; color:#999; margin-bottom:15px">
+                ⚠️ Changing extension (e.g. .txt → .locked) 
+                will be detected by the security system.
+            </p>
+            <div class="modal-btns">
+                <button type="button" class="modal-cancel"
+                        onclick="closeRename()">Cancel</button>
+                <button type="submit" class="modal-save">
+                    Rename
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="content">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div>
+            <div class="page-title">📁 Cloud File Storage</div>
+            <div class="page-subtitle">
+                Your IP: {{ current_ip }} |
+                {{ files|length }} total files
+            </div>
+        </div>
+    </div>
+
+    <!-- STATS ROW -->
+    <div class="stats-row">
+        <div class="stat-mini">
+            <div class="num">{{ files|length }}</div>
+            <div class="lbl">Total Files</div>
+        </div>
+        <div class="stat-mini">
+            <div class="num">
+                {% set normal = [] %}
+                {% for f in files %}
+                    {% if not f.is_locked %}
+                        {% set _ = normal.append(1) %}
+                    {% endif %}
+                {% endfor %}
+                {{ normal|length }}
+            </div>
+            <div class="lbl">Normal Files</div>
+        </div>
+        <div class="stat-mini danger">
+            <div class="num">
+                {% set locked = [] %}
+                {% for f in files %}
+                    {% if f.is_locked %}
+                        {% set _ = locked.append(1) %}
+                    {% endif %}
+                {% endfor %}
+                {{ locked|length }}
+            </div>
+            <div class="lbl">🔒 Suspicious Files</div>
+        </div>
+    </div>
+
+    <!-- INFO BOX -->
+    <div class="warning-note">
+        ℹ️ <strong>How file monitoring works:</strong>
+        This cloud storage is monitored 24/7 by our security system.
+        Any file renamed to a suspicious extension
+        (e.g. <strong>.locked</strong>, <strong>.encrypted</strong>)
+        will be automatically detected, the file will be recovered,
+        and the responsible user will be logged out and blocked.
+    </div>
+
+    <!-- MAIN CARD -->
+    <div class="card">
+
+        <!-- UPLOAD -->
+        <div class="upload-zone">
+            <div class="upload-zone-icon">⬆️</div>
+            <form action="/upload" method="POST"
+                  enctype="multipart/form-data">
+                <input type="file" name="file" required>
+                <button type="submit" class="btn-upload">
+                    Upload File
+                </button>
+            </form>
+        </div>
+
+        <div class="section-title">
+            📁 All Files
+            <span class="file-count">{{ files|length }} files</span>
+        </div>
+
+        {% if files %}
+        <table>
+            <tr>
+                <th>Type</th>
+                <th>File Name</th>
+                <th>Size</th>
+                <th>Last Modified</th>
+                <th>Actions</th>
+            </tr>
+            {% for file in files %}
+            <tr>
+                <td class="file-icon">{{ file.type }}</td>
+                <td>
+                    {% if file.is_locked %}
+                        <span class="file-name-locked">
+                            {{ file.name }}
+                        </span>
+                        <span class="locked-badge">
+                            🔒 SUSPICIOUS
+                        </span>
+                    {% else %}
+                        <span class="file-name-normal">
+                            {{ file.name }}
+                        </span>
+                    {% endif %}
+                </td>
+                <td style="color:#888">{{ file.size }}</td>
+                <td style="color:#aaa; font-size:12px">
+                    {{ file.modified }}
+                </td>
+                <td>
+                    <div class="actions">
+                        <!-- RENAME BUTTON - Real world way to simulate -->
+                        <button class="btn btn-rename"
+                                onclick="openRename(
+                                    '{{ file.name }}'
+                                )">
+                            ✏️ Rename
+                        </button>
+
+                        <!-- DELETE BUTTON -->
+                        <a class="btn btn-delete"
+                           href="/delete/{{ file.name }}"
+                           onclick="return confirm(
+                               'Delete {{ file.name }}?'
+                           )">
+                            🗑️ Delete
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        {% else %}
+        <div class="no-files">
+            <div style="font-size:50px; margin-bottom:10px">📭</div>
+            No files in cloud storage.<br>
+            Upload files using the button above.
+        </div>
+        {% endif %}
+
+    </div>
+
+</div>
+
+<script>
+function openRename(filename) {
+    document.getElementById('oldNameInput').value = filename;
+    document.getElementById('newNameInput').value = filename;
+    document.getElementById('currentNameDisplay').textContent = filename;
+    document.getElementById('renameModal').classList.add('active');
+    document.getElementById('newNameInput').focus();
+    document.getElementById('newNameInput').select();
+}
+
+function closeRename() {
+    document.getElementById('renameModal').classList.remove('active');
+}
+
+// Close modal on overlay click
+document.getElementById('renameModal').addEventListener('click', function(e) {
+    if (e.target === this) closeRename();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Access Blocked</title>
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Courier New', 'Consolas', monospace;
+    background-color: #0a0000;
+    color: #cc3333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 520px;
+    width: 100%;
+    padding: 40px;
+    text-align: center;
+}
+
+.icon-wrapper {
+    margin-bottom: 25px;
+    font-size: 70px;
+}
+
+h1 {
+    font-size: 32px;
+    color: #ff1111;
+    margin-bottom: 18px;
+}
+
+.subtitle {
+    font-size: 13px;
+    color: #aa2222;
+    margin-bottom: 28px;
+}
+
+.ip-card {
+    background-color: #120000;
+    border: 2px solid #990000;
+    border-radius: 8px;
+    padding: 22px;
+    margin-bottom: 26px;
+}
+
+.ip-label {
+    font-size: 12px;
+    color: #884444;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.ip-value {
+    font-size: 26px;
+    color: #ff2222;
+    word-break: break-all;
+}
+
+.info {
+    font-size: 12px;
+    color: #994444;
+    line-height: 2;
+    background-color: #080000;
+    border-radius: 6px;
+    padding: 16px;
+    border-left: 3px solid #660000;
+}
+
+.footer {
+    margin-top: 35px;
+    font-size: 10px;
+    color: #551111;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<div class="icon-wrapper">🚫</div>
+
+<h1>YOUR IP IS BLOCKED</h1>
+
+<p class="subtitle">
+    This connection has been terminated by security system
+</p>
+
+<div class="ip-card">
+<div class="ip-label">Blocked IP Address:</div>
+<div class="ip-value">{{ ip }}</div>
+</div>
+
+<div class="info">
+<strong>Detection:</strong> Too many failed login attempts<br>
+<strong>Status:</strong> Permanently Blocked<br>
+<strong>Evidence:</strong> All activity captured and stored<br>
+<strong>Reference:</strong> Case ID: <span style="color:#ff5555">BLOCKED-{{ ip }}</span>
+</div>
+
+<div class="footer">
+Contact system administrator to request removal of this block.
+</div>
+
+</div>
+
+</body>
+</html>

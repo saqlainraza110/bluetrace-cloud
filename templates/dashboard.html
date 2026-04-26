@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Security Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0d0d1a;
+            color: #e0e0e0;
+        }
+
+        .navbar {
+            background: #16213e;
+            padding: 12px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #00ff88;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar h1 {
+            color: #00ff88;
+            font-size: 15px;
+        }
+
+        .navbar-right {
+            font-size: 12px;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .navbar a {
+            color: #00ff88;
+            text-decoration: none;
+            font-size: 12px;
+            border: 1px solid #00ff88;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        .navbar a:hover {
+            background: #00ff88;
+            color: black;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .status-bar {
+            padding: 14px 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .status-safe {
+            background: #003300;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+        }
+
+        .status-danger {
+            background: #330000;
+            border: 2px solid #ff0000;
+            color: #ff4444;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #16213e;
+            border: 1px solid #0f3460;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-card.danger {
+            border-color: #ff4444;
+        }
+
+        .stat-card.warning {
+            border-color: #ff8800;
+        }
+
+        .stat-num {
+            font-size: 32px;
+            font-weight: bold;
+            color: #00ff88;
+        }
+
+        .stat-num.red { color: #ff4444; }
+        .stat-num.orange { color: #ff8800; }
+
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .attack-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .attack-box {
+            border-radius: 10px;
+            padding: 18px;
+            text-align: center;
+        }
+
+        .box-bf {
+            background: #1a0800;
+            border: 1px solid #ff8800;
+        }
+
+        .box-rs {
+            background: #1a0000;
+            border: 1px solid #ff4444;
+        }
+
+        .box-ua {
+            background: #0a001a;
+            border: 1px solid #aa44ff;
+        }
+
+        .attack-box h3 {
+            font-size: 12px;
+            margin: 8px 0 5px;
+        }
+
+        .attack-icon {
+            font-size: 28px;
+        }
+
+        .attack-desc {
+            font-size: 10px;
+            color: #666;
+        }
+
+        .section {
+            background: #16213e;
+            border: 1px solid #0f3460;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #0f3460;
+        }
+
+        .section h2 {
+            color: #00ff88;
+            font-size: 13px;
+        }
+
+        .live-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        th {
+            background: #0f3460;
+            padding: 8px 10px;
+            text-align: left;
+            color: #00ff88;
+            font-size: 11px;
+        }
+
+        td {
+            padding: 7px 10px;
+            border-bottom: 1px solid #1a2a4a;
+            vertical-align: middle;
+        }
+
+        tr:hover { background: #1a2a4a; }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .b-fail { background: #660000; color: #ff8888; }
+        .b-success { background: #003300; color: #00ff88; }
+        .b-block { background: #cc0000; color: white; }
+        .b-warn { background: #663300; color: #ffaa00; }
+        .b-deny { background: #330044; color: #ff88ff; }
+        .b-detect { background: #ff0000; color: white; }
+        .b-suspicious { background: #664400; color: #ffaa44; }
+        .b-restored { background: #004400; color: #88ff88; }
+        .b-emergency { background: #880000; color: #ff4444; }
+
+        .ip-orange { color: #ff8800; font-weight: bold; }
+        .ip-blue { color: #44aaff; }
+        .ip-purple { color: #ff44ff; }
+        .ip-red { color: #ff4444; font-weight: bold; }
+
+        .no-data {
+            text-align: center;
+            color: #444;
+            padding: 25px;
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .refresh-info {
+            font-size: 10px;
+            color: #444;
+            text-align: right;
+        }
+
+        .user-info {
+            font-size: 11px;
+        }
+
+        .user-info strong {
+            color: #00ff88;
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+    <h1>🛡️ Cloud Security Detection & Forensics Dashboard</h1>
+    <div class="navbar-right">
+        <span class="user-info">
+            User: <strong>{{ current_user }}</strong>
+        </span>
+        <span class="user-info">
+            Your IP: <strong style="color:#ff8800">{{ current_ip }}</strong>
+        </span>
+        <a href="/forensics">🔍 Forensics</a>
+        <a href="/admin">⚙️ Admin</a>
+        <a href="/logout">🚪 Logout</a>
+    </div>
+</div>
+
+<div class="content">
+
+    <!-- STATUS BAR -->
+    <div class="status-bar
+        {% if stats.system_status == 'THREATS_DETECTED' %}
+            status-danger
+        {% else %}
+            status-safe
+        {% endif %}
+    ">
+        {% if stats.system_status == 'THREATS_DETECTED' %}
+            🚨 SECURITY THREATS DETECTED — AUTOMATED RESPONSE ACTIVE
+        {% else %}
+            ✅ ALL SYSTEMS NORMAL — MONITORING ACTIVE — NO THREATS DETECTED
+        {% endif %}
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-num">{{ stats.total_file_logs }}</div>
+            <div class="stat-label">📁 File Events Logged</div>
+        </div>
+        <div class="stat-card warning">
+            <div class="stat-num orange">{{ stats.total_alerts }}</div>
+            <div class="stat-label">⚠️ Total Alerts Generated</div>
+        </div>
+        <div class="stat-card danger">
+            <div class="stat-num red">{{ stats.total_security_events }}</div>
+            <div class="stat-label">🔐 Security Events</div>
+        </div>
+        <div class="stat-card danger">
+            <div class="stat-num red">{{ stats.total_blocked }}</div>
+            <div class="stat-label">🚫 IPs Blocked</div>
+        </div>
+    </div>
+
+    <!-- ATTACK TYPE CARDS -->
+    <div class="attack-grid">
+        <div class="attack-box box-bf">
+            <div class="attack-icon">🔓</div>
+            <h3 style="color:#ff8800">ATTACK 1: BRUTE FORCE</h3>
+            <p class="attack-desc">
+                Password guessing detection<br>
+                Auto IP block after {{ 5 }} failed attempts
+            </p>
+        </div>
+        <div class="attack-box box-rs">
+            <div class="attack-icon">🔒</div>
+            <h3 style="color:#ff4444">ATTACK 2: RANSOMWARE</h3>
+            <p class="attack-desc">
+                File encryption detection<br>
+                Auto stop and restore files
+            </p>
+        </div>
+        <div class="attack-box box-ua">
+            <div class="attack-icon">🚫</div>
+            <h3 style="color:#aa44ff">ATTACK 3: UNAUTHORIZED</h3>
+            <p class="attack-desc">
+                Restricted access detection<br>
+                Auto block on repeated attempts
+            </p>
+        </div>
+    </div>
+
+    <!-- LIVE LOGIN ATTEMPTS -->
+    <div class="section">
+        <div class="section-header">
+            <h2>
+                <span class="live-dot"></span>
+                LIVE LOGIN ATTEMPTS — Real IP Addresses
+            </h2>
+            <span class="refresh-info">Auto-refreshes every 5s</span>
+        </div>
+
+        {% if stats.login_attempts %}
+        <table>
+            <tr>
+                <th>#</th>
+                <th>Timestamp</th>
+                <th>IP Address</th>
+                <th>Username Tried</th>
+                <th>Password Tried</th>
+                <th>Result</th>
+                <th>Browser / Device</th>
+            </tr>
+            {% for attempt in stats.login_attempts %}
+            <tr>
+                <td style="color:#555">{{ loop.index }}</td>
+                <td>{{ attempt[4] }}</td>
+                <td class="ip-orange">{{ attempt[1] }}</td>
+                <td class="ip-blue">{{ attempt[2] }}</td>
+                <td style="color:
+                    {% if attempt[5] == 1 %}#555
+                    {% else %}#ff6666{% endif %}
+                ">
+                    {% if attempt[5] == 1 %}
+                        [hidden on success]
+                    {% else %}
+                        {{ attempt[3] }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if attempt[5] == 1 %}
+                        <span class="badge b-success">✅ SUCCESS</span>
+                    {% else %}
+                        <span class="badge b-fail">❌ FAILED</span>
+                    {% endif %}
+                </td>
+                <td style="font-size:10px; color:#555">
+                    {{ attempt[6][:45] if attempt[6] else 'Unknown' }}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <div class="no-data">
+            No login attempts yet.<br>
+            Open <strong style="color:#00ff88">
+            http://{{ current_ip }}:5000/login</strong>
+            on your phone or another device to test.<br>
+            Try wrong passwords — watch them appear here live!
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- BLOCKED IPs -->
+    <div class="section">
+        <div class="section-header">
+            <h2>🚫 BLOCKED IP ADDRESSES</h2>
+        </div>
+
+        {% if stats.blocked_ips %}
+        <table>
+            <tr>
+                <th>Time Blocked</th>
+                <th>Blocked IP</th>
+                <th>Failed Attempts</th>
+                <th>Reason</th>
+                <th>Status</th>
+            </tr>
+            {% for ip_row in stats.blocked_ips %}
+            <tr>
+                <td>{{ ip_row[4] }}</td>
+                <td class="ip-red">🚫 {{ ip_row[1] }}</td>
+                <td style="color:#ff8800; font-weight:bold">
+                    {{ ip_row[5] }}
+                </td>
+                <td style="font-size:10px; color:#aaa">
+                    {{ ip_row[2][:55] }}
+                </td>
+                <td>
+                    <span class="badge
+                        {% if ip_row[6] == 'BLOCKED' %}b-block
+                        {% else %}b-success{% endif %}
+                    ">
+                        {{ ip_row[6] }}
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <div class="no-data">
+            No IPs blocked yet.<br>
+            Try 5 wrong passwords from any device
+            to see automatic IP blocking in action.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- SECURITY EVENTS -->
+    <div class="section">
+        <div class="section-header">
+            <h2>
+                <span class="live-dot"></span>
+                SECURITY EVENTS LOG
+            </h2>
+        </div>
+
+        {% if stats.recent_security_events %}
+        <table>
+            <tr>
+                <th>Timestamp</th>
+                <th>Event Type</th>
+                <th>Username</th>
+                <th>IP Address</th>
+                <th>Action</th>
+                <th>Target Resource</th>
+                <th>Status</th>
+            </tr>
+            {% for event in stats.recent_security_events %}
+            <tr>
+                <td>{{ event[1] }}</td>
+                <td>
+                    {% if 'BRUTE_FORCE' in event[2] %}
+                        <span class="badge b-detect">BRUTE FORCE</span>
+                    {% elif event[2] == 'LOGIN_FAILED' %}
+                        <span class="badge b-fail">LOGIN FAILED</span>
+                    {% elif event[2] == 'LOGIN_SUCCESS' %}
+                        <span class="badge b-success">LOGIN OK</span>
+                    {% elif 'UNAUTHORIZED' in event[2] %}
+                        <span class="badge b-warn">UNAUTHORIZED</span>
+                    {% elif 'BLOCKED' in event[2] %}
+                        <span class="badge b-block">IP BLOCKED</span>
+                    {% elif 'PRIVILEGE' in event[2] %}
+                        <span class="badge b-deny">PRIV ESCALATION</span>
+                    {% else %}
+                        <span class="badge b-deny">
+                            {{ event[2][:14] }}
+                        </span>
+                    {% endif %}
+                </td>
+                <td class="ip-blue">{{ event[3] }}</td>
+                <td class="ip-orange">{{ event[4] }}</td>
+                <td style="font-size:10px; color:#888">
+                    {{ event[5][:20] }}
+                </td>
+                <td class="ip-purple" style="font-size:10px">
+                    {{ event[6][:25] }}
+                </td>
+                <td>
+                    <span class="badge
+                        {% if event[7] == 'BLOCKED' %}b-block
+                        {% elif event[7] == 'FAILED' %}b-fail
+                        {% elif event[7] == 'SUCCESS' %}b-success
+                        {% elif event[7] == 'DENIED' %}b-deny
+                        {% else %}b-warn{% endif %}
+                    ">{{ event[7] }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <div class="no-data">
+            No security events yet.<br>
+            Start testing attacks to see events appear here.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- FILE ACTIVITY (RANSOMWARE) -->
+    <div class="section">
+        <div class="section-header">
+            <h2>📁 FILE ACTIVITY — Ransomware Monitor</h2>
+        </div>
+
+        {% if stats.recent_file_logs %}
+        <table>
+            <tr>
+                <th>Timestamp</th>
+                <th>Event Type</th>
+                <th>File Name</th>
+                <th>Details</th>
+            </tr>
+            {% for log in stats.recent_file_logs %}
+            <tr>
+                <td>{{ log[1] }}</td>
+                <td>
+                    {% if log[2] == 'SUSPICIOUS' %}
+                        <span class="badge b-suspicious">
+                            ⚠️ SUSPICIOUS
+                        </span>
+                    {% elif log[2] == 'DELETED_LOCKED' %}
+                        <span class="badge b-block">
+                            🗑️ LOCKED DELETED
+                        </span>
+                    {% elif log[2] == 'RESTORED' %}
+                        <span class="badge b-restored">
+                            ✅ RESTORED
+                        </span>
+                    {% elif log[2] == 'EMERGENCY_STOP' %}
+                        <span class="badge b-emergency">
+                            🚨 EMERGENCY STOP
+                        </span>
+                    {% elif log[2] == 'NEW_FILE' %}
+                        <span class="badge b-success">
+                            📄 NEW FILE
+                        </span>
+                    {% elif log[2] == 'DELETED' %}
+                        <span class="badge b-fail">
+                            🗑️ DELETED
+                        </span>
+                    {% else %}
+                        <span class="badge">{{ log[2] }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ log[3] }}</td>
+                <td style="font-size:10px; color:#666">
+                    {{ log[4] }}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <div class="no-data">
+            No file activity yet.<br>
+            Run <strong style="color:#00ff88">
+            python ransomware_simulator.py</strong>
+            to test ransomware detection.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- SYSTEM ALERTS -->
+    <div class="section">
+        <div class="section-header">
+            <h2>⚠️ SYSTEM ALERTS</h2>
+        </div>
+
+        {% if stats.recent_alerts %}
+        <table>
+            <tr>
+                <th>Timestamp</th>
+                <th>Alert Type</th>
+                <th>Message</th>
+                <th>Status</th>
+            </tr>
+            {% for alert in stats.recent_alerts %}
+            <tr>
+                <td>{{ alert[1] }}</td>
+                <td style="color:#ff6600; font-weight:bold">
+                    {{ alert[2] }}
+                </td>
+                <td style="font-size:11px">{{ alert[3] }}</td>
+                <td>
+                    <span class="badge
+                        {% if alert[4] == 'ACTIVE' %}b-warn
+                        {% else %}b-success{% endif %}
+                    ">{{ alert[4] }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <div class="no-data">No alerts yet. System is safe.</div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+    // Auto refresh every 5 seconds for live monitoring
+    setTimeout(function() {
+        location.reload();
+    }, 5000);
+</script>
+
+</body>
+</html>

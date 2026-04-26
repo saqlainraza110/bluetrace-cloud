@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel - Security Tool</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Courier New', monospace;
+    background: #0d0d1a;
+    color: #e0e0e0;
+}
+.navbar {
+    background: #16213e;
+    padding: 12px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #ff8800;
+}
+.navbar h1 { color: #ff8800; font-size: 15px; }
+.navbar-right { display: flex; gap: 10px; align-items: center; }
+.navbar a {
+    color: #00ff88;
+    text-decoration: none;
+    font-size: 12px;
+    border: 1px solid #00ff88;
+    padding: 5px 12px;
+    border-radius: 4px;
+}
+.navbar a:hover { background: #00ff88; color: black; }
+.content { padding: 25px; }
+.warning-bar {
+    background: #1a0800;
+    border: 1px solid #ff8800;
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    font-size: 12px;
+    color: #ff8800;
+}
+.count-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+.count-card {
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+}
+.count-num { font-size: 28px; font-weight: bold; }
+.count-label { font-size: 11px; color: #666; margin-top: 5px; }
+.section {
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+.section h2 {
+    color: #00ff88;
+    font-size: 13px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #0f3460;
+}
+table { width: 100%; border-collapse: collapse; font-size: 11px; }
+th {
+    background: #0f3460;
+    padding: 9px 12px;
+    text-align: left;
+    color: #00ff88;
+}
+td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #1a2a4a;
+    vertical-align: middle;
+}
+tr:hover { background: #1a2a4a; }
+.unblock-btn {
+    display: inline-block;
+    background: #003300;
+    color: #00ff88;
+    border: 1px solid #00ff88;
+    padding: 5px 14px;
+    border-radius: 5px;
+    font-size: 11px;
+    text-decoration: none;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+}
+.unblock-btn:hover { background: #00ff88; color: black; }
+.badge-blocked {
+    display: inline-block;
+    background: #cc0000;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+}
+.badge-unblocked {
+    display: inline-block;
+    background: #003300;
+    color: #00ff88;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+}
+.badge-success {
+    display: inline-block;
+    background: #003300;
+    color: #00ff88;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+}
+.badge-fail {
+    display: inline-block;
+    background: #660000;
+    color: #ff8888;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+}
+.no-data {
+    text-align: center;
+    color: #444;
+    padding: 25px;
+    font-size: 12px;
+}
+</style>
+</head>
+<body>
+
+<div class="navbar">
+    <h1>⚙️ Admin Panel — {{ current_user }}</h1>
+    <div class="navbar-right">
+        <a href="/dashboard">← Dashboard</a>
+        <a href="/evidence">🔍 Evidence</a>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+
+<div class="content">
+
+    <div class="warning-bar">
+        ⚙️ Security Admin Panel — Manage blocked IPs and
+        view all attack attempts on Company Cloud Portal (port 8080)
+    </div>
+
+    <!-- COUNT CARDS -->
+    <div class="count-grid">
+        <div class="count-card">
+            <div class="count-num" style="color:#ff4444">
+                {{ blocked_ips|length }}
+            </div>
+            <div class="count-label">🚫 Blocked IPs</div>
+        </div>
+        <div class="count-card">
+            <div class="count-num" style="color:#ff8800">
+                {{ login_attempts|length }}
+            </div>
+            <div class="count-label">🔐 Login Attempts</div>
+        </div>
+        <div class="count-card">
+            <div class="count-num" style="color:#00ff88">
+                {% set s = [] %}
+                {% for a in login_attempts %}
+                    {% if a[5] == 1 %}{% set _ = s.append(1) %}{% endif %}
+                {% endfor %}
+                {{ s|length }}
+            </div>
+            <div class="count-label">✅ Successful Logins</div>
+        </div>
+    </div>
+
+    <!-- BLOCKED IPs -->
+    <div class="section">
+        <h2>🚫 Blocked IP Addresses
+            — Click "Unblock IP" to restore access
+        </h2>
+
+        {% if blocked_ips %}
+        <table>
+            <tr>
+                <th>#</th>
+                <th>IP Address</th>
+                <th>Reason</th>
+                <th>Blocked At</th>
+                <th>Attempts</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+            {% for row in blocked_ips %}
+            <tr>
+                <td style="color:#555">{{ loop.index }}</td>
+                <td style="color:#ff4444; font-weight:bold">
+                    {{ row[1] }}
+                </td>
+                <td style="font-size:10px; color:#aaa; max-width:200px">
+                    {{ row[2] }}
+                </td>
+                <td>{{ row[3] }}</td>
+                <td style="color:#ff8800">{{ row[4] }}</td>
+                <td>
+                    {% if row[5] == 'BLOCKED' %}
+                        <span class="badge-blocked">BLOCKED</span>
+                    {% else %}
+                        <span class="badge-unblocked">UNBLOCKED</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if row[5] == 'BLOCKED' %}
+                        <a class="unblock-btn"
+                           href="/admin/unblock/{{ row[1] }}"
+                           onclick="return confirm(
+                               'Unblock IP: {{ row[1] }}?\n'
+                               + 'This will restore access for this IP.'
+                           )">
+                            ✅ Unblock IP
+                        </a>
+                    {% else %}
+                        <span style="color:#444; font-size:10px">
+                            Already unblocked
+                        </span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <div class="no-data">
+            No blocked IPs yet.<br>
+            <span style="color:#555">
+                Test brute force on port 8080 to see IPs blocked here.
+            </span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- LOGIN ATTEMPTS -->
+    <div class="section">
+        <h2>📋 All Login Attempts on Company Cloud Portal</h2>
+
+        {% if login_attempts %}
+        <table>
+            <tr>
+                <th>#</th>
+                <th>Timestamp</th>
+                <th>IP Address</th>
+                <th>Username</th>
+                <th>Password Tried</th>
+                <th>Result</th>
+                <th>Browser</th>
+            </tr>
+            {% for a in login_attempts %}
+            <tr>
+                <td style="color:#555">{{ loop.index }}</td>
+                <td>{{ a[4] }}</td>
+                <td style="color:#ff8800; font-weight:bold">
+                    {{ a[1] }}
+                </td>
+                <td style="color:#44aaff">{{ a[2] }}</td>
+                <td style="color:
+                    {% if a[5] == 1 %}#555{% else %}#ff6666{% endif %}
+                ">
+                    {% if a[5] == 1 %}[protected]
+                    {% else %}{{ a[3] }}{% endif %}
+                </td>
+                <td>
+                    {% if a[5] == 1 %}
+                        <span class="badge-success">✅ SUCCESS</span>
+                    {% else %}
+                        <span class="badge-fail">❌ FAILED</span>
+                    {% endif %}
+                </td>
+                <td style="font-size:10px; color:#555">
+                    {{ a[6][:40] if a[6] else 'Unknown' }}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <div class="no-data">No login attempts yet.</div>
+        {% endif %}
+    </div>
+
+</div>
+</body>
+</html>
