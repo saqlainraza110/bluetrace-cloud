@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Forensic Evidence - Security Tool</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Courier New', monospace;
+    background: #0d0d1a;
+    color: #e0e0e0;
+}
+.navbar {
+    background: #16213e;
+    padding: 12px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #00ff88;
+}
+.navbar h1 { color: #00ff88; font-size: 15px; }
+.navbar-right { display: flex; gap: 10px; }
+.navbar a {
+    color: #00ff88;
+    text-decoration: none;
+    font-size: 12px;
+    border: 1px solid #00ff88;
+    padding: 5px 12px;
+    border-radius: 4px;
+}
+.navbar a:hover { background: #00ff88; color: black; }
+.content { padding: 25px; }
+.count-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+.count-card {
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+}
+.count-num { font-size: 26px; font-weight: bold; color: #00ff88; }
+.count-num.red { color: #ff4444; }
+.count-num.orange { color: #ff8800; }
+.count-label { font-size: 11px; color: #666; margin-top: 5px; }
+.section {
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+.section h2 {
+    color: #00ff88;
+    font-size: 13px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #0f3460;
+}
+table { width: 100%; border-collapse: collapse; font-size: 11px; }
+th {
+    background: #0f3460;
+    padding: 9px 12px;
+    text-align: left;
+    color: #00ff88;
+}
+td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #1a2a4a;
+    vertical-align: top;
+}
+tr:hover { background: #1a2a4a; }
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+}
+.b-critical { background: #cc0000; color: white; }
+.b-high { background: #cc5500; color: white; }
+.b-medium { background: #665500; color: #ffaa00; }
+.b-info { background: #003366; color: #66aaff; }
+.b-ransomware { background: #990000; color: white; }
+.b-brute { background: #994400; color: white; }
+.b-unauth { background: #440099; color: white; }
+.no-data {
+    text-align: center;
+    color: #444;
+    padding: 25px;
+    font-size: 12px;
+}
+.report-btn {
+    background: #003300;
+    color: #00ff88;
+    border: 1px solid #00ff88;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: 'Courier New', monospace;
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+.report-btn:hover { background: #00ff88; color: black; }
+</style>
+</head>
+<body>
+
+<div class="navbar">
+    <h1>🔍 Forensic Evidence Collection</h1>
+    <div class="navbar-right">
+        <a href="/dashboard">← Dashboard</a>
+        <a href="/admin">⚙️ Admin</a>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+
+<div class="content">
+
+    <a href="/generate-report" class="report-btn"
+       onclick="
+           fetch('/generate-report')
+           .then(r=>r.json())
+           .then(d=>alert(d.message));
+           return false;
+       ">
+        📄 Generate PDF Forensic Report
+    </a>
+
+    <!-- COUNTS -->
+    <div class="count-grid">
+        <div class="count-card">
+            <div class="count-num red">
+                {{ stats.total_evidence }}
+            </div>
+            <div class="count-label">🔍 Evidence Records</div>
+        </div>
+        <div class="count-card">
+            <div class="count-num orange">
+                {{ stats.total_alerts }}
+            </div>
+            <div class="count-label">⚠️ Alerts</div>
+        </div>
+        <div class="count-card">
+            <div class="count-num red">
+                {{ stats.total_blocked }}
+            </div>
+            <div class="count-label">🚫 IPs Blocked</div>
+        </div>
+        <div class="count-card">
+            <div class="count-num">
+                {{ stats.total_security_events }}
+            </div>
+            <div class="count-label">🔐 Security Events</div>
+        </div>
+    </div>
+
+    <!-- EVIDENCE LOGS -->
+    <div class="section">
+        <h2>🔍 Forensic Evidence Log — All Attack Evidence</h2>
+
+        {% if stats.evidence_logs %}
+        <table>
+            <tr>
+                <th>Time</th>
+                <th>Attack Type</th>
+                <th>Attacker IP</th>
+                <th>Username</th>
+                <th>Action</th>
+                <th>Target</th>
+                <th>Severity</th>
+                <th>Evidence Details</th>
+            </tr>
+            {% for ev in stats.evidence_logs %}
+            <tr>
+                <td>{{ ev[1] }}</td>
+                <td>
+                    {% if 'RANSOMWARE' in ev[2] %}
+                        <span class="badge b-ransomware">
+                            🔒 {{ ev[2] }}
+                        </span>
+                    {% elif 'BRUTE' in ev[2] %}
+                        <span class="badge b-brute">
+                            🔓 {{ ev[2] }}
+                        </span>
+                    {% elif 'UNAUTHORIZED' in ev[2] %}
+                        <span class="badge b-unauth">
+                            🚫 {{ ev[2] }}
+                        </span>
+                    {% else %}
+                        <span class="badge b-info">{{ ev[2] }}</span>
+                    {% endif %}
+                </td>
+                <td style="color:#ff8800; font-weight:bold">
+                    {{ ev[3] }}
+                </td>
+                <td style="color:#44aaff">{{ ev[4] }}</td>
+                <td style="font-size:10px">{{ ev[5] }}</td>
+                <td style="font-size:10px; color:#ff44ff">
+                    {{ ev[6][:30] }}
+                </td>
+                <td>
+                    {% if ev[8] == 'CRITICAL' %}
+                        <span class="badge b-critical">CRITICAL</span>
+                    {% elif ev[8] == 'HIGH' %}
+                        <span class="badge b-high">HIGH</span>
+                    {% elif ev[8] == 'MEDIUM' %}
+                        <span class="badge b-medium">MEDIUM</span>
+                    {% else %}
+                        <span class="badge b-info">{{ ev[8] }}</span>
+                    {% endif %}
+                </td>
+                <td style="font-size:10px; color:#888; max-width:200px">
+                    {{ ev[7][:100] }}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <div class="no-data">
+            No evidence collected yet.<br>
+            Perform attacks on Cloud Portal (port 8080)
+            to see evidence appear here.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- SECURITY EVENTS -->
+    <div class="section">
+        <h2>🔐 Security Events Log</h2>
+
+        {% if stats.recent_security_events %}
+        <table>
+            <tr>
+                <th>Time</th>
+                <th>Event</th>
+                <th>Username</th>
+                <th>IP Address</th>
+                <th>Target</th>
+                <th>Status</th>
+                <th>Details</th>
+            </tr>
+            {% for ev in stats.recent_security_events %}
+            <tr>
+                <td>{{ ev[1] }}</td>
+                <td style="color:#ff8800">{{ ev[2] }}</td>
+                <td style="color:#44aaff">{{ ev[3] }}</td>
+                <td style="color:#ff4444; font-weight:bold">
+                    {{ ev[4] }}
+                </td>
+                <td style="color:#ff44ff; font-size:10px">
+                    {{ ev[6][:25] }}
+                </td>
+                <td style="color:
+                    {% if ev[7] == 'BLOCKED' %}#ff4444
+                    {% elif ev[7] == 'FAILED' %}#ff8800
+                    {% elif ev[7] == 'SUCCESS' %}#00ff88
+                    {% else %}#888{% endif %}
+                ">{{ ev[7] }}</td>
+                <td style="font-size:10px; color:#666">
+                    {{ ev[8][:60] if ev[8] else '' }}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <div class="no-data">No security events yet.</div>
+        {% endif %}
+    </div>
+
+    <!-- ALERTS -->
+    <div class="section">
+        <h2>⚠️ System Alerts</h2>
+        {% if stats.recent_alerts %}
+        <table>
+            <tr>
+                <th>Time</th>
+                <th>Alert Type</th>
+                <th>Message</th>
+                <th>Status</th>
+            </tr>
+            {% for alert in stats.recent_alerts %}
+            <tr>
+                <td>{{ alert[1] }}</td>
+                <td style="color:#ff6600; font-weight:bold">
+                    {{ alert[2] }}
+                </td>
+                <td style="font-size:11px">{{ alert[3] }}</td>
+                <td style="color:
+                    {% if alert[4] == 'ACTIVE' %}#ff8800
+                    {% else %}#00ff88{% endif %}
+                ">{{ alert[4] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <div class="no-data">No alerts yet.</div>
+        {% endif %}
+    </div>
+
+</div>
+</body>
+</html>

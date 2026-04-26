@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Access Denied - 403</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0d0d00;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #ffaa00;
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .icon {
+            font-size: 70px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #ff8800;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: #ff6600;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .ip-box {
+            background: #1a1000;
+            border: 2px solid #ff8800;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .ip-box p {
+            font-size: 12px;
+            color: #aa8800;
+            margin-bottom: 5px;
+        }
+
+        .ip-value {
+            font-size: 22px;
+            color: #ff8800;
+            font-weight: bold;
+        }
+
+        .info-box {
+            background: #110d00;
+            border: 1px solid #664400;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .info-box p {
+            font-size: 12px;
+            color: #aa8800;
+            margin-bottom: 8px;
+            line-height: 1.8;
+        }
+
+        .warning {
+            background: #1a0000;
+            border: 1px solid #ff0000;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 20px;
+            color: #ff6666;
+            font-size: 12px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 25px;
+            color: #00ff88;
+            text-decoration: none;
+            font-size: 13px;
+            border: 1px solid #00ff88;
+            padding: 8px 20px;
+            border-radius: 6px;
+        }
+
+        .back-link:hover {
+            background: #00ff88;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="icon">⛔</div>
+
+    <h1>403 - ACCESS DENIED</h1>
+    <h2>You Don't Have Permission</h2>
+
+    <div class="ip-box">
+        <p>Your IP Address:</p>
+        <div class="ip-value">{{ ip }}</div>
+        <p style="margin-top:8px; font-size:11px;">
+            This attempt has been logged
+        </p>
+    </div>
+
+    <div class="info-box">
+        <p>
+            <strong style="color:#ff8800">Resource:</strong>
+            The page you tried to access is restricted.
+        </p>
+        <p>
+            <strong style="color:#ff8800">Logged:</strong>
+            Your IP address, timestamp, and browser
+            information have been recorded.
+        </p>
+        <p>
+            <strong style="color:#ff8800">Warning:</strong>
+            Repeated unauthorized access attempts will
+            result in your IP being permanently blocked.
+        </p>
+    </div>
+
+    <div class="warning">
+        ⚠️ This is a restricted area of the cloud security system.
+        Unauthorized access is monitored and logged.
+    </div>
+
+    <br>
+    <a href="/login" class="back-link">← Go to Login</a>
+
+</div>
+
+</body>
+</html>

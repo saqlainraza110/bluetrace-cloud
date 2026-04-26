@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Forensics Panel</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0d0d1a;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .header {
+            background: #16213e;
+            padding: 15px 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #00ff88;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #00ff88;
+            font-size: 16px;
+        }
+
+        .header-links a {
+            color: #00ff88;
+            text-decoration: none;
+            font-size: 12px;
+            border: 1px solid #00ff88;
+            padding: 5px 12px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+
+        .header-links a:hover {
+            background: #00ff88;
+            color: black;
+        }
+
+        .section {
+            background: #16213e;
+            border: 1px solid #0f3460;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            color: #00ff88;
+            font-size: 13px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #0f3460;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        th {
+            background: #0f3460;
+            padding: 8px 10px;
+            text-align: left;
+            color: #00ff88;
+        }
+
+        td {
+            padding: 7px 10px;
+            border-bottom: 1px solid #1a2a4a;
+        }
+
+        tr:hover { background: #1a2a4a; }
+
+        .no-data {
+            text-align: center;
+            color: #444;
+            padding: 25px;
+            font-size: 12px;
+        }
+
+        .report-btn {
+            background: #003300;
+            color: #00ff88;
+            border: 1px solid #00ff88;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            text-decoration: none;
+        }
+
+        .report-btn:hover {
+            background: #00ff88;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🔍 Forensic Investigation Panel</h1>
+    <div class="header-links">
+        <a href="/generate-report">📄 Generate PDF Report</a>
+        <a href="/dashboard">← Dashboard</a>
+    </div>
+</div>
+
+<!-- SECURITY EVENTS -->
+<div class="section">
+    <h2>🔐 Complete Security Events Log</h2>
+
+    {% if stats.recent_security_events %}
+    <table>
+        <tr>
+            <th>Timestamp</th>
+            <th>Event Type</th>
+            <th>Username</th>
+            <th>IP Address</th>
+            <th>Action</th>
+            <th>Target</th>
+            <th>Status</th>
+            <th>Details</th>
+        </tr>
+        {% for event in stats.recent_security_events %}
+        <tr>
+            <td>{{ event[1] }}</td>
+            <td style="color:#ff8800">{{ event[2] }}</td>
+            <td style="color:#44aaff">{{ event[3] }}</td>
+            <td style="color:#ff4444; font-weight:bold">
+                {{ event[4] }}
+            </td>
+            <td>{{ event[5] }}</td>
+            <td style="color:#ff44ff">{{ event[6] }}</td>
+            <td style="color:
+                {% if event[7] == 'BLOCKED' %}#ff4444
+                {% elif event[7] == 'FAILED' %}#ff8800
+                {% elif event[7] == 'SUCCESS' %}#00ff88
+                {% else %}#888888{% endif %}
+            ">{{ event[7] }}</td>
+            <td style="font-size:10px; color:#666">
+                {{ event[8][:50] if event[8] else '' }}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <div class="no-data">No security events recorded yet.</div>
+    {% endif %}
+</div>
+
+<!-- FILE ACTIVITY -->
+<div class="section">
+    <h2>📁 File Activity Log — Ransomware Evidence</h2>
+
+    {% if stats.recent_file_logs %}
+    <table>
+        <tr>
+            <th>Timestamp</th>
+            <th>Event</th>
+            <th>File Name</th>
+            <th>Details</th>
+        </tr>
+        {% for log in stats.recent_file_logs %}
+        <tr>
+            <td>{{ log[1] }}</td>
+            <td style="color:
+                {% if log[2] == 'SUSPICIOUS' %}#ff8800
+                {% elif log[2] == 'RESTORED' %}#00ff88
+                {% elif 'EMERGENCY' in log[2] %}#ff0000
+                {% elif log[2] == 'DELETED_LOCKED' %}#ff4444
+                {% else %}#888{% endif %}
+            ">{{ log[2] }}</td>
+            <td>{{ log[3] }}</td>
+            <td style="font-size:10px; color:#666">
+                {{ log[4] }}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <div class="no-data">No file activity recorded yet.</div>
+    {% endif %}
+</div>
+
+<!-- ALERTS -->
+<div class="section">
+    <h2>⚠️ System Alerts Log</h2>
+
+    {% if stats.recent_alerts %}
+    <table>
+        <tr>
+            <th>Timestamp</th>
+            <th>Alert Type</th>
+            <th>Message</th>
+            <th>Status</th>
+        </tr>
+        {% for alert in stats.recent_alerts %}
+        <tr>
+            <td>{{ alert[1] }}</td>
+            <td style="color:#ff6600; font-weight:bold">
+                {{ alert[2] }}
+            </td>
+            <td style="font-size:11px">{{ alert[3] }}</td>
+            <td style="color:
+                {% if alert[4] == 'ACTIVE' %}#ff8800
+                {% else %}#00ff88{% endif %}
+            ">{{ alert[4] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <div class="no-data">No alerts recorded yet.</div>
+    {% endif %}
+</div>
+
+</body>
+</html>
